@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <!-- import VUE -->
+    <script src="js/vue.js"></script>
+    <!-- import CSS -->
+    <link rel="stylesheet" href="css/popup.css">
+    <link rel="stylesheet" href="css/vant.css"/>
+    <!-- import JavaScript -->
+    <script src="js/vant.js"></script>
+    <title>popup</title>
+</head>
+<body>
+<main id="app" class="yyds-main">
+    <van-tabs color="#333" type="card" animated v-model:active="baseInfo.activePageTab"  @change="onPageTabClick">
+        <van-tab v-for="tab in baseInfo.tabs" :key="tab.name" :title="tab.label" :name="tab.name">
+            <article v-if="tab.name === 'game'" class="game">
+                <van-tabs color="#999" animated v-model:active="baseInfo.activeGameTab" @change="onGameTabClick">
+                    <van-tab v-for="gameTab in gameTabs" :key="gameTab.name" :title="gameTab.label"
+                                 :name="gameTab.name">
+                        <div class="game-tab-item">
+                            <van-button size="small" v-if="gameTab.data.status !== -1" @click="onGameClick(gameTab,gameTab.data)">
+                                {{gameTab.data.status === 1 ? '停止' :'开始'}}{{ gameTab.label }}
+                            </van-button>
+                        </div>
+                    </van-tab>
+                </van-tabs>
+            </article>
+            <article v-if="tab.name === 'setting'" class="setting">
+                <van-row :gutter="12">
+                    <van-col class="outer" :span="8" v-for="card in baseInfo.settingCards" :key="card.name">
+                        <van-button style="width: 80px" size="small"  @click="onSettingClick(card.cmd,card.label)">
+                            {{card.label}}
+                        </van-button>
+                    </van-col>
+                </van-row>
+            </article>
+        </van-tab>
+    </van-tabs>
+</main>
+</body>
+<script type="text/javascript" src="js/info.js"></script>
+<script type="text/javascript" src="js/msg.js"></script>
+<script type="text/javascript" src="js/popup.js"></script>
+</html>
+<!DOCTYPE html>
