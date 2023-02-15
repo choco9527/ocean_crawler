@@ -1,6 +1,6 @@
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-puppeteer.use(StealthPlugin())
+const puppeteer = require('puppeteer');
+// const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+// puppeteer.use(StealthPlugin())
 
 const dotenv = require("dotenv")
 dotenv.config()
@@ -20,6 +20,7 @@ const dataMap = {
         await sleep(3000); // 等待3s进入首页 仅等待是不好确保的，需要做更细致的区分，此处简化
         console.log('监听需要的响应')
         await listen(page)
+        await sleep(1000)
         console.log('触发事件如点击tab')
         await emit(page)
         await sleep(3000)
@@ -34,7 +35,6 @@ const dataMap = {
                 args: ["--window-position=0,0", `--window-size=1280,800`],
                 defaultViewport: {width: 1280, height: 800},
                 // devtools: true,
-                executablePath: process.env.CHROME_PATH,
                 ignoreDefaultArgs: ["--enable-automation"]
             }
             const browser = await puppeteer.launch(options);

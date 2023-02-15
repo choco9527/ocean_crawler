@@ -1,12 +1,12 @@
 {
-  "name": "puppeteer",
+  "name": "ocean_crawler",
   "version": "1.0.0",
   "description": "yys",
   "main": "index.js",
   "dependencies": {
     "dotenv": "^10.0.0",
     "get-pixels": "^3.3.3",
-    "puppeteer-core": "^10.1.0",
+    "puppeteer": "^19.7.0",
     "puppeteer-extra": "^3.1.18",
     "puppeteer-extra-plugin-stealth": "^2.7.8"
   },
@@ -14,9 +14,6 @@
   "scripts": {
     "local": "node index.js"
   },
-  "keywords": [
-    "yyds"
-  ],
   "author": "choco",
   "license": "ISC",
   "private": "true"
