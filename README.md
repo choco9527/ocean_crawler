@@ -1,5 +1,6 @@
 巨量爬虫
 ==========
-1. 安装nodejs https://nodejs.org/zh-cn/
-2. npm -i 安装项目依赖
-3. .env文件可配置EMAIL PASSWORD，会在打开窗口后自动填写
+1. 安装nodejs
+2. npm -i
+3. .env文件中配置 EMAIL 和 PASSWORD（暂时仅支持邮箱登录）
+4. npm run local 可自动运行

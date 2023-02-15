@@ -43,7 +43,7 @@ const dataMap = {
         }
 
         async function login(p) {
-            if (process.env.EMAIL && process.env.PASS) { // 输入账号密码
+            if (process.env.EMAIL && process.env.PASSWORD) { // 输入账号密码
                 console.log('正在登录巨量')
                 const urls = [
                     'https://business.oceanengine.com/login?appKey=51' // 巨量登录页
@@ -60,7 +60,7 @@ const dataMap = {
                 await p.mouse.click(x, 345) // 账号
                 await p.keyboard.type(process.env.EMAIL, {delay: 80})
                 await p.mouse.click(x, 393) // 密码
-                await p.keyboard.type(process.env.PASS, {delay: 80})
+                await p.keyboard.type(process.env.PASSWORD, {delay: 80})
 
                 await p.mouse.click(820, 455) // 协议
                 await p.mouse.click(x, 500) // 登录
