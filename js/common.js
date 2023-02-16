@@ -1,3 +1,6 @@
+const Rembrandt = require('rembrandt') // 比较图片的库
+const fs = require('fs').promises
+
 function sleep(ms = 0) {
   return new Promise(resolve => {
     const t = setTimeout(() => {
@@ -91,78 +94,84 @@ async function analysisClick(p) {
   await sleep(2000)
 }
 
-
 /**
- * 计算按钮需要滑动的距离
- * */
-async function calculateDistance(page) {
-  const distance = await page.evaluate(() => {
+ * 点击并处理验证码 核心方法
+ * 挪动滑块，逐张比较原图和移动后的图，取相似度最高时的位置
+ * @param page
+ * @param emit 触发出现验证码的函数
+ * @returns {Promise<void>}
+ */
 
-    // 比较像素,找到缺口的大概位置
-    function compare(document) {
-      const img1 = document.getElementById('captcha-verify-image'); // 完成图片
-      const img2 = document.querySelector('.captcha_verify_img_slide'); // 带缺口图片
-
-      const getCtx = img => {
-        const canvas = document.createElement("canvas");   //创建canvas DOM元素
-        const w = img.width
-        const h = img.height
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        return ctx
-      }
-      let ctx1 = null
-      let ctx2 = null
-
-      if (!img1.complete) {
-        img1.onload = _ => {
-          ctx1 = getCtx(img1)
-        }
-      } else {
-        ctx1 = getCtx(img1)
-      }
-      if (!img2.complete) {
-        img2.onload = _ => {
-          ctx2 = getCtx(img2)
-        }
-      } else {
-        ctx2 = getCtx(img2)
-      }
-
-      window.ctx1 = ctx1
-      window.ctx2 = ctx2
-
-
-      // const pixelDifference = 30; // 像素差
-      // let res = []; // 保存像素差较大的x坐标
-      //
-      // // 对比像素
-      // for (let i = 57; i < 260; i++) {
-      //   for (let j = 1; j < 160; j++) {
-      //     const imgData1 = ctx1.getContext("2d").getImageData(1 * i, 1 * j, 1, 1)
-      //     const imgData2 = ctx2.getContext("2d").getImageData(1 * i, 1 * j, 1, 1)
-      //     const data1 = imgData1.data;
-      //     const data2 = imgData2.data;
-      //     const res1 = Math.abs(data1[0] - data2[0]);
-      //     const res2 = Math.abs(data1[1] - data2[1]);
-      //     const res3 = Math.abs(data1[2] - data2[2]);
-      //     if (!(res1 < pixelDifference && res2 < pixelDifference && res3 < pixelDifference)) {
-      //       if (!res.includes(i)) {
-      //         res.push(i);
-      //       }
-      //     }
-      //   }
-      // }
-      // // 返回像素差最大值跟最小值，经过调试最小值往左小7像素，最大值往左54像素
-      // return {min: res[0] - 7, max: res[res.length - 1] - 54}
+async function calculateDistance(page, emit) {
+  let originalImage = ''
+  // 拦截请求
+  await page.setRequestInterception(true)
+  page.on('request', request => request.continue())
+  page.on('response', async response => {
+    if (response.headers()['content-type'] === 'image/jpeg') {
+      originalImage = await response.buffer().catch(() => {
+      })
     }
-
-    return compare(document)
+    originalImage && await fs.writeFile('./img/origin.jpeg', originalImage)
   })
-  console.log('distance', distance);
-  return distance;
+
+  emit && await emit() // 触发造成图片加载的事件
+
+  await sleep(3000)
+
+  if (!originalImage) {
+    console.log('没发现验证码')
+    return
+  }
+  await page.waitForSelector('.captcha_verify_container') // 验证码容器完成加载
+
+  const sliderElement = await page.$('.captcha_verify_slide--slidebar') // 滑动条
+  const slider = await sliderElement.boundingBox()
+
+  const sliderHandle = await page.$('.secsdk-captcha-drag-icon') // 滑块
+  const handle = await sliderHandle.boundingBox()
+
+  let currentPosition = 0
+  let bestSlider = {
+    position: 0,
+    difference: 100
+  }
+
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2)
+  await page.mouse.down()
+
+  // 缓慢移动并进行比较
+  console.log('缓慢移动并进行比较')
+  while (currentPosition < slider.width - handle.width / 2) {
+
+    await page.mouse.move(
+      handle.x + currentPosition,
+      handle.y + handle.height / 2 + Math.random() * 10 - 5
+    )
+
+    let sliderContainer = await page.$('#captcha-verify-image') // 整个验证码最外层节点
+    let sliderImage = await sliderContainer.screenshot() // 给整个验证码截图
+    await fs.writeFile('./img/moment.jpeg', sliderImage)
+    const rembrandt = new Rembrandt({
+      imageA: originalImage,
+      imageB: sliderImage,
+      thresholdType: Rembrandt.THRESHOLD_PERCENT
+    })
+
+    let result = await rembrandt.compare() // 比较
+
+    let difference = result.percentageDifference * 100
+
+    if (difference < bestSlider.difference) {
+      bestSlider.difference = difference
+      bestSlider.position = currentPosition
+    }
+    currentPosition += 4
+  }
+  // 每100毫秒执行一次慢慢移动到目标位置
+  await page.mouse.move(handle.x + bestSlider.position, handle.y + handle.height / 2, {steps: 100})
+  await page.mouse.up()
+
 }
 
 

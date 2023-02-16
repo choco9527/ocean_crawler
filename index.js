@@ -4,6 +4,7 @@ const puppeteer = require('puppeteer');
 
 const dotenv = require("dotenv")
 dotenv.config()
+
 const {
   calculateDistance,
   sleep,
@@ -14,26 +15,26 @@ const {
   getLiveRoomData
 } = require('./js/common');
 
-// 最终需要的数据集合
-const dataMap = {
+const main = async function () {
+  // 最终需要的数据集合
+  const dataMap = {
     'getLiveRoomData': undefined,
     'getLivingData': undefined,
     'getAnalysisLivingData': undefined
   }
-
-;(async () => {
   try {
     const page = await openBrowser() // 打开浏览器
     await login(page) // 登录
     await sleep(3000); // 等待3s进入首页 仅等待是不好确保的，需要做更细致的区分，此处简化
+
     console.log('监听需要的响应')
     await listen(page)
     await sleep(1000)
+
     console.log('触发事件如点击tab')
     await emit(page)
     await sleep(3000)
-    console.log('查看数据')
-    console.log(dataMap)
+
 
     async function openBrowser() {
       console.log('正在启动 Chrome')
@@ -75,13 +76,12 @@ const dataMap = {
 
         await p.click('.check-box-container', {delay: 200}) // 协议
 
-        await p.click('.account-center-submit', {delay: 200}) // 登录
-        await sleep(3000)
-        await p.waitForSelector('.captcha_verify_container')
+        const submit = async () => { // 登录
+          await p.click('.account-center-submit', {delay: 200})
+        }
 
-        // 可能会出现验证码
-        const xy = await calculateDistance(p) //
-
+        // 处理验证码
+        await calculateDistance(p, submit)
 
       } else {
         throw new Error('没有账号密码')
@@ -109,7 +109,19 @@ const dataMap = {
       await analysisClick(p)
     }
 
+    return dataMap
+
   } catch (e) {
     console.warn(e);
+    return dataMap
   }
-})();
+};
+
+main().then(data => {
+  console.log('最终数据', data); /*！最终数据！*/
+})
+
+/**
+ *
+ * 准确率 容错率
+ */
