@@ -10,6 +10,12 @@ function sleep(ms = 0) {
   })
 }
 
+function randomNumber(min = 0, max = 0, Int = true) // random Int / Float
+{
+  return Int ? Math.floor(Math.random() * (max - min + 1) + min) :
+    Math.random() * (max - min) + min
+}
+
 /**
  * 将response数据获取data并转换为对象
  * @param text
@@ -103,75 +109,101 @@ async function analysisClick(p) {
  */
 
 async function calculateDistance(page, emit) {
-  let originalImage = ''
-  // 拦截请求
-  await page.setRequestInterception(true)
-  page.on('request', request => request.continue())
-  page.on('response', async response => {
-    if (response.headers()['content-type'] === 'image/jpeg') {
-      originalImage = await response.buffer().catch(() => {
-      })
-    }
-    originalImage && await fs.writeFile('./img/origin.jpeg', originalImage)
-  })
-
-  emit && await emit() // 触发造成图片加载的事件
-
-  await sleep(3000)
-
-  if (!originalImage) {
-    console.log('没发现验证码')
-    return
-  }
-  await page.waitForSelector('.captcha_verify_container') // 验证码容器完成加载
-
-  const sliderElement = await page.$('.captcha_verify_slide--slidebar') // 滑动条
-  const slider = await sliderElement.boundingBox()
-
-  const sliderHandle = await page.$('.secsdk-captcha-drag-icon') // 滑块
-  const handle = await sliderHandle.boundingBox()
-
-  let currentPosition = 0
-  let bestSlider = {
-    position: 0,
-    difference: 100
-  }
-
-  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2)
-  await page.mouse.down()
-
-  // 缓慢移动并进行比较
-  console.log('缓慢移动并进行比较')
-  while (currentPosition < slider.width - handle.width / 2) {
-
-    await page.mouse.move(
-      handle.x + currentPosition,
-      handle.y + handle.height / 2 + Math.random() * 10 - 5
-    )
-
-    let sliderContainer = await page.$('#captcha-verify-image') // 整个验证码最外层节点
-    let sliderImage = await sliderContainer.screenshot() // 给整个验证码截图
-    await fs.writeFile('./img/moment.jpeg', sliderImage)
-    const rembrandt = new Rembrandt({
-      imageA: originalImage,
-      imageB: sliderImage,
-      thresholdType: Rembrandt.THRESHOLD_PERCENT
+  try {
+    let originalImage = ''
+    // 拦截请求
+    await page.setRequestInterception(true)
+    page.on('request', request => request.continue())
+    page.on('response', async response => {
+      if (response.headers()['content-type'] === 'image/jpeg') {
+        originalImage = await response.buffer().catch(() => {
+        })
+      }
+      originalImage && await fs.writeFile('./img/origin.jpeg', originalImage)
     })
 
-    let result = await rembrandt.compare() // 比较
-
-    let difference = result.percentageDifference * 100
-
-    if (difference < bestSlider.difference) {
-      bestSlider.difference = difference
-      bestSlider.position = currentPosition
+    emit && await emit() // 触发造成图片加载的事件
+    await sleep(3000)
+    if (!originalImage) {
+      console.log('没发现验证码')
+      return
     }
-    currentPosition += 4
-  }
-  // 每100毫秒执行一次慢慢移动到目标位置
-  await page.mouse.move(handle.x + bestSlider.position, handle.y + handle.height / 2, {steps: 100})
-  await page.mouse.up()
 
+    async function comparing() {
+      await sleep(1000)
+      await page.waitForSelector('.captcha_verify_container') // 验证码容器完成加载
+
+      const sliderElement = await page.$('.captcha_verify_slide--slidebar') // 滑动条
+      const slider = await sliderElement.boundingBox()
+
+      const sliderHandle = await page.$('.secsdk-captcha-drag-icon') // 滑块
+      const handle = await sliderHandle.boundingBox()
+
+      let currentPosition = 0
+      let bestSlider = {
+        position: 0,
+        difference: 100
+      }
+      let worstSlider = {
+        difference: 0
+      }
+
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2)
+      await page.mouse.down()
+
+      // 缓慢移动并进行比较
+      console.log('缓慢移动并进行比较')
+      while (currentPosition < slider.width - handle.width / 2) {
+
+        await page.mouse.move(
+          handle.x + currentPosition,
+          handle.y + handle.height / 2 + randomNumber(4, 10) - 5
+        )
+
+        let sliderContainer = await page.$('.captcha_verify_img--wrapper') // 给整个验证码截图
+        let sliderImage = await sliderContainer.screenshot()
+        await fs.writeFile('./img/moment.jpeg', sliderImage)
+
+        const rembrandt = new Rembrandt({
+          imageA: originalImage,
+          imageB: sliderImage,
+          thresholdType: Rembrandt.THRESHOLD_PERCENT
+        })
+
+        let result = await rembrandt.compare() // 比较
+
+        let difference = result.percentageDifference * 100
+
+        if (difference < bestSlider.difference) {
+          bestSlider.difference = difference
+          bestSlider.position = currentPosition
+        }
+        if (difference > worstSlider.difference) {
+          worstSlider.difference = difference
+        }
+        currentPosition += 5
+      }
+      console.log(bestSlider);
+      console.log(worstSlider) // 最差的
+
+      await page.mouse.move(handle.x + bestSlider.position, handle.y + handle.height / 2, 300)
+      await page.mouse.up()
+      await sleep(1000)
+    }
+
+    await comparing()
+    await sleep(1000)
+
+    const con = await page.$('.captcha_verify_container')
+
+    if (con) { // 还有容器表示验证失败
+      console.log('验证失败! 重试')
+      await comparing()
+    }
+  } catch (e) {
+    console.log('比较失败')
+    throw e
+  }
 }
 
 
