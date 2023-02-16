@@ -4,7 +4,15 @@ const puppeteer = require('puppeteer');
 
 const dotenv = require("dotenv")
 dotenv.config()
-const {calculateDistance, sleep, liveClick, analysisClick, getLivingData, getAnalysisLivingData, getLiveRoomData} = require('./js/common');
+const {
+  calculateDistance,
+  sleep,
+  liveClick,
+  analysisClick,
+  getLivingData,
+  getAnalysisLivingData,
+  getLiveRoomData
+} = require('./js/common');
 
 // 最终需要的数据集合
 const dataMap = {
@@ -51,6 +59,7 @@ const dataMap = {
           'https://business.oceanengine.com/login?appKey=51' // 巨量登录页
         ]
         const url = urls[0]
+        await p.setBypassCSP(true)
         await p.goto(url);
 
         await p.waitForSelector('.login-bg')
