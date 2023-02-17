@@ -122,8 +122,8 @@ async function calculateDistance(page, emit) {
       }
       if (originalImage) {
         // resize image
-        images(originalImage).resize(340, 212).save("./img/origin.jpeg", {quality: 100});
-        originalImage = await fs.readFile('./img/origin.jpeg')
+        images(originalImage).size(340, 212).save("./img/origin.png");
+        originalImage = await fs.readFile('./img/origin.png')
       }
 
     })
@@ -168,7 +168,7 @@ async function calculateDistance(page, emit) {
 
         let sliderContainer = await page.$('.captcha_verify_img--wrapper') // 给整个验证码截图
         let sliderImage = await sliderContainer.screenshot()
-        await fs.writeFile('./img/moment.jpeg', sliderImage)
+        await fs.writeFile('./img/moment.png', sliderImage)
 
         const rembrandt = new Rembrandt({
           imageA: originalImage,
