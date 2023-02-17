@@ -192,7 +192,7 @@ async function calculateDistance(page, emit) {
       console.log(bestSlider);
       console.log(worstSlider) // 最差的
 
-      await page.mouse.move(handle.x + bestSlider.position, handle.y + handle.height / 2, 300)
+      await page.mouse.move(handle.x + bestSlider.position, handle.y + handle.height / 2, 100)
       await page.mouse.up()
       await sleep(1000)
     }
