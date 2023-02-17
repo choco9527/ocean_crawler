@@ -40,11 +40,14 @@ const main = async function () {
       console.log('正在启动 Chrome')
 
       const options = {
-        headless: false,
+        headless: false, // 无头模式
         args: ["--window-position=0,0", `--window-size=1280,800`],
         defaultViewport: {width: 1280, height: 800},
         // devtools: true,
         ignoreDefaultArgs: ["--enable-automation"]
+      }
+      if (process.env.CHROME_PATH) {
+        options.executablePath = process.env.CHROME_PATH
       }
       const browser = await puppeteer.launch(options);
       const [p] = await browser.pages()
