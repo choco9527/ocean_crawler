@@ -122,8 +122,8 @@ async function calculateDistance(page, emit) {
       }
       if (originalImage) {
         // resize image
-        images(originalImage).resize(320).save("./img/origin.jpeg", {quality: 100});
-        originalImage = await fs.open('./img/origin.jpeg')
+        images(originalImage).resize(340, 212).save("./img/origin.jpeg", {quality: 100});
+        originalImage = await fs.readFile('./img/origin.jpeg')
       }
 
     })
@@ -204,7 +204,7 @@ async function calculateDistance(page, emit) {
 
     if (con) { // 还有容器表示验证失败
       console.log('验证失败! 重试')
-      await comparing()
+      // await comparing()
     }
   } catch (e) {
     console.log('比较失败')
