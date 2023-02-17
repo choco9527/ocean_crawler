@@ -1,5 +1,6 @@
 const Rembrandt = require('rembrandt') // 比较图片的库
 const fs = require('fs').promises
+import {base64HeaderArray} from './base'
 
 function sleep(ms = 0) {
   return new Promise(resolve => {
@@ -118,19 +119,25 @@ async function calculateDistance(page, emit) {
       if (response.headers()['content-type'] === 'image/jpeg') {
         originalImage = await response.buffer().catch(() => {
         })
+        const base64 = base64HeaderArray[1].value + originalImage.toString('base64')
+        console.log(base64);
+        const img = new Image()
+        img.src = base64
+        img.width = 320
+        img.height = 240
       }
       originalImage && await fs.writeFile('./img/origin.jpeg', originalImage)
     })
 
     emit && await emit() // 触发造成图片加载的事件
-    await sleep(3000)
+    await sleep(2000)
     if (!originalImage) {
       console.log('没发现验证码')
       return
     }
 
     async function comparing() {
-      await sleep(1000)
+      await sleep(500)
       await page.waitForSelector('.captcha_verify_container') // 验证码容器完成加载
 
       const sliderElement = await page.$('.captcha_verify_slide--slidebar') // 滑动条
