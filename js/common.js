@@ -1,6 +1,6 @@
 const Rembrandt = require('rembrandt') // 比较图片的库
 const fs = require('fs').promises
-import {base64HeaderArray} from './base'
+const images = require('images')
 
 function sleep(ms = 0) {
   return new Promise(resolve => {
@@ -119,14 +119,13 @@ async function calculateDistance(page, emit) {
       if (response.headers()['content-type'] === 'image/jpeg') {
         originalImage = await response.buffer().catch(() => {
         })
-        const base64 = base64HeaderArray[1].value + originalImage.toString('base64')
-        console.log(base64);
-        const img = new Image()
-        img.src = base64
-        img.width = 320
-        img.height = 240
       }
-      originalImage && await fs.writeFile('./img/origin.jpeg', originalImage)
+      if (originalImage) {
+        // resize image
+        images(originalImage).resize(320).save("./img/origin.jpeg", {quality: 100});
+        originalImage = await fs.open('./img/origin.jpeg')
+      }
+
     })
 
     emit && await emit() // 触发造成图片加载的事件
